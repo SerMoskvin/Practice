@@ -1,7 +1,8 @@
 # Конфигурационный файл для настройки обработки данных
 
 # Путь к файлу с данными
-DATA_FILE_PATH = "C:/Users/Joker/PycharmProjects/Practice/Data/sales_data.xlsx"
+# DATA_FILE_PATH = "C:/Users/Joker/PycharmProjects/Practice/Data/sales_data.xlsx"
+DATA_FILE_PATH = "../Data/sales_data.xlsx"
 
 # Настройки очистки данных
 CLEANING_CONFIG = {

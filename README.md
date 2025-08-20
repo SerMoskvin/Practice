@@ -1,27 +1,28 @@
 
-# Project "Sales analysis and forecast"
-### Python project for study practice
+# Проект "Анализ и прогноз продаж"
+### Проект на Python для учебной практики
 ![Python Version](https://img.shields.io/badge/python-3.13.3-blue.svg)
 ![Version](https://img.shields.io/github/v/tag/SerMoskvin/Practice)
 
-## Tasks performed by the project:
-- [ ] loading and clearing data;
-- [ ] calculating revenue by month;
-- [ ] plotting graphs based on various characteristics;
-- [ ] identify the most profitable areas;
-- [ ] determine the number of sales in each category;
-- [ ] calculate the average bill by region and the difference between purchase amounts;
-- [ ] identify most popular products;
-- [ ] if there is a "Client Type" - analysis of client types;
-- [ ] if there is an "Industry Type" - determine revenue by industry and demand by business areas.
+## Задачи, выполняемые проектом:
+- [x] Загрузка и очистка данных;
+- [x] Подсчёт выручки по месяцам;
+- [x] Выявление наиболее прибыльного направления;
+- [x] Определение числа заказов в каждой из категорий;
+- [x] Вычисление среднего чека по регионам;
+- [x] Определение наиболее популярных продуктов;
+- [x] Если есть столбец "Тип клиента" - анализирование клиентов;
+- [x] Если есть столбец "Отрасль" - определение спроса бизнеса;
+- [ ] Обучение модели для прогноза продаж.
 
-## Data file 
-For correct work of code, you need to use a .xlsx file with the following columns: 
+## Файл с данными
+Для корректной работы кода необходимо использовать файл формата `.xlsx` с такой структурой: 
 
-|Sales | Client       | Region    | Product      | Category    | Quantity | Amount | (Client type) | (Industry type) |
-|------|--------------|-----------|--------------|-------------|----------|--------|---------------|-----------------|
-| 1000  | Client A    | Yaroslavl | Product X    | Category 1  | 10       | 10000  | Individual    | IT              |
+| Дата продажи | Клиент   | Регион    | Продукт   | Категория   | Кол-во | Сумма | **Тип клиента* | **Отрасль* |
+|--------------|----------|-----------|-----------|-------------|--------|-------|----------------|------------|
+| 2025-10-08   | Клиент А | Ярославль | Продукт Н | Категория 1 | 10     | 10000 | Юр.лицо        | IT         |
 
-## Work start
-To install all dependencies, write `pip install -r requirements.txt` in terminal.
-To configure project (name of datafile and load conditions) - edit `config.py`.
+Столбцы, отмеченные `*`, необязательны.
+## Начало работы
+Чтобы установить все необходимые зависимости, пропишите `pip install -r requirements.txt` в терминале/консоли. 
+Чтобы настроить проект (путь до файла с данными, фильтр для чтения данных) - отредактируйте `config.py`.
