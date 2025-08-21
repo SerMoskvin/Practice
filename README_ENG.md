@@ -6,14 +6,15 @@
 
 ## Tasks performed by the project:
 - [x] loading and clearing data;
-- [ ] calculating revenue by month;
-- [ ] plotting graphs based on various characteristics;
-- [ ] identify the most profitable areas;
-- [ ] determine the number of sales in each category;
-- [ ] calculate the average bill by region and the difference between purchase amounts;
-- [ ] identify most popular products;
-- [ ] if there is a "Client Type" - analysis of client types;
-- [ ] if there is an "Industry Type" - determine revenue by industry and demand by business areas.
+- [x] calculating revenue by month;
+- [x] plotting graphs based on various characteristics;
+- [x] identify the most profitable areas;
+- [x] determine the number of sales in each category;
+- [x] calculate the average bill by region and the difference between purchase amounts;
+- [x] identify most popular products;
+- [x] if there is a "Client Type" - analysis of client types;
+- [x] if there is an "Industry Type" - determine revenue by industry and demand by business areas;
+- [x] forecast future sales.
 
 ## Data file 
 For correct work of code, you need to use a .xlsx file with the following columns: 
