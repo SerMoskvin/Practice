@@ -1,4 +1,5 @@
 import matplotlib.pyplot as plt
+import pandas as pd
 from prophet import Prophet
 from prophet.plot import plot_plotly, plot_components_plotly
 import warnings
@@ -116,33 +117,6 @@ def plot_prophet_forecast(model, forecast, df_prophet=None):
     total_forecast = future_forecast['yhat'].sum()
     print(f"\n💰 Суммарный прогноз на {len(future_forecast)} дней: {total_forecast:,.0f} руб.")
 
-
-def evaluate_prophet_model(model, forecast, df_prophet):
-    """
-    Простая оценка качества модели на исторических данных.
-    Расчет MAPE (Mean Absolute Percentage Error)
-    """
-    # Соединяем факт и прогноз
-    df_eval = df_prophet.merge(forecast[['ds', 'yhat']], on='ds', how='inner')
-
-    # Вычисляем ошибку
-    df_eval['error'] = df_eval['y'] - df_eval['yhat']
-    df_eval['ape'] = (abs(df_eval['error']) / df_eval['y']) * 100
-
-    # Усредняем ошибку (исключаем деление на 0 и бесконечные значения)
-    df_eval = df_eval[df_eval['y'] > 0]
-    mape = df_eval['ape'].mean()
-
-    print(f"📊 Ошибка прогноза на исторических данных (MAPE): {mape:.2f}%")
-    print("💡 Интерпретация MAPE:")
-    print("   <10% - Отличная точность")
-    print("   10%-20% - Хорошая точность")
-    print("   20%-50% - Приемлемая точность")
-    print("   >50% - Неточный прогноз")
-
-    return mape
-
-
 def run_full_analysis():
     """
     Запускает полный анализ: EDA + прогнозирование
@@ -242,3 +216,209 @@ def run_only_forecast():
         return model, forecast, mape
 
     return None, None, None
+
+
+def forecast_by_category(df_clean, config=PROPHET_CONFIG):
+    """
+    Прогноз продаж по отдельным категориям товаров
+    Строит отдельную модель Prophet для каждой категории
+    """
+    if 'Категория' not in df_clean.columns:
+        print("❌ Отсутствует столбец 'Категория'")
+        return {}
+
+    categories = df_clean['Категория'].unique()
+    print(f"📊 Прогнозирование для {len(categories)} категорий")
+
+    results = {}
+
+    for category in categories:
+        print(f"\n🔍 Анализируем категорию: {category}")
+
+        # Фильтруем данные по категории
+        df_category = df_clean[df_clean['Категория'] == category]
+
+        # Подготавливаем данные для Prophet
+        df_prophet = prepare_for_prophet(df_category)
+
+        # Проверяем, достаточно ли данных для прогноза
+        if df_prophet is not None and len(df_prophet) > 30:
+            try:
+                # Создаем и обучаем модель для категории
+                model, forecast = create_prophet_model(df_prophet, config)
+
+                if model and forecast is not None:
+                    # Оцениваем качество прогноза
+                    mape = evaluate_prophet_model(model, forecast, df_prophet)
+
+                    # Сохраняем результаты
+                    results[category] = {
+                        'model': model,
+                        'forecast': forecast,
+                        'last_actual_value': df_prophet['y'].iloc[-1] if len(df_prophet) > 0 else 0,
+                        'data_points': len(df_prophet),
+                        'mape': mape,
+                        'df_prophet': df_prophet
+                    }
+
+                    # Визуализируем прогноз для категории
+                    plt.figure(figsize=(12, 6))
+                    model.plot(forecast)
+                    plt.title(f'Прогноз продаж для категории: {category}\nMAPE: {mape:.1f}%',
+                              fontsize=14, fontweight='bold')
+                    plt.xlabel('Дата')
+                    plt.ylabel('Выручка, руб.')
+                    plt.grid(True, alpha=0.3)
+                    plt.tight_layout()
+                    plt.show()
+
+                    print(f"✅ Прогноз для '{category}' готов ({len(df_prophet)} точек данных, MAPE: {mape:.1f}%)")
+
+            except Exception as e:
+                print(f"❌ Ошибка при прогнозировании категории '{category}': {e}")
+        else:
+            data_points = len(df_prophet) if df_prophet is not None else 0
+            print(f"⚠️ Недостаточно данных для категории '{category}': {data_points} точек (требуется > 30)")
+
+    return results
+
+
+def analyze_category_forecasts(results):
+    """
+    Анализ и сравнение прогнозов по категориям
+    """
+    if not results:
+        print("❌ Нет результатов для анализа")
+        return None
+
+    print("\n" + "=" * 60)
+    print("📈 СРАВНИТЕЛЬНЫЙ АНАЛИЗ ПРОГНОЗОВ ПО КАТЕГОРИЯМ")
+    print("=" * 60)
+
+    # Создаем DataFrame для анализа
+    analysis_data = []
+
+    for category, data in results.items():
+        forecast = data['forecast']
+
+        # Берем прогноз на будущий период (последние 30 дней прогноза)
+        last_training_date = data['df_prophet']['ds'].max()
+        future_forecast = forecast[forecast['ds'] > last_training_date]
+
+        if len(future_forecast) > 0:
+            total_forecast = future_forecast['yhat'].sum()
+            avg_daily_forecast = future_forecast['yhat'].mean()
+
+            analysis_data.append({
+                'Категория': category,
+                'Исторических_точек': data['data_points'],
+                'Последнее_факт_значение': data['last_actual_value'],
+                'Суммарный_прогноз': total_forecast,
+                'Средний_дневной_прогноз': avg_daily_forecast,
+                'Рост_к_факту_%': ((avg_daily_forecast / data['last_actual_value']) - 1) * 100 if data[
+                                                                                                      'last_actual_value'] > 0 else 0,
+                'Точность_MAPE_%': data.get('mape', 0)
+            })
+
+    if not analysis_data:
+        print("❌ Нет данных для анализа прогнозов")
+        return None
+
+    # Создаем DataFrame
+    df_analysis = pd.DataFrame(analysis_data)
+
+    # Сортируем по суммарному прогнозу
+    df_analysis = df_analysis.sort_values('Суммарный_прогноз', ascending=False)
+
+    # Выводим таблицу
+    print("📊 Сравнительная таблица прогнозов:")
+    display_df = df_analysis.copy()
+
+    # Форматирование чисел
+    display_df['Суммарный_прогноз'] = display_df['Суммарный_прогноз'].apply(lambda x: f"{x:,.0f}")
+    display_df['Средний_дневной_прогноз'] = display_df['Средний_дневной_прогноз'].apply(lambda x: f"{x:,.0f}")
+    display_df['Последнее_факт_значение'] = display_df['Последнее_факт_значение'].apply(lambda x: f"{x:,.0f}")
+    display_df['Рост_к_факту_%'] = display_df['Рост_к_факту_%'].apply(lambda x: f"{x:+.1f}%")
+    display_df['Точность_MAPE_%'] = display_df['Точность_MAPE_%'].apply(lambda x: f"{x:.1f}%")
+
+    print(display_df.to_string(index=False))
+
+    # Визуализация
+    plt.figure(figsize=(14, 10))
+
+    # График 1: Суммарный прогноз
+    plt.subplot(2, 1, 1)
+    bars = plt.bar(range(len(df_analysis)), df_analysis['Суммарный_прогноз'].astype(float))
+    plt.title('Суммарный прогноз по категориям', fontsize=16, fontweight='bold')
+    plt.xlabel('Категория')
+    plt.ylabel('Прогноз выручки, руб.')
+    plt.xticks(range(len(df_analysis)), df_analysis['Категория'], rotation=45, ha='right')
+
+    for bar, value in zip(bars, df_analysis['Суммарный_прогноз'].astype(float)):
+        plt.text(bar.get_x() + bar.get_width() / 2.,
+                 bar.get_height() + max(df_analysis['Суммарный_прогноз'].astype(float)) * 0.01,
+                 f'{value:,.0f}', ha='center', va='bottom', fontsize=10)
+
+    plt.grid(axis='y', alpha=0.3)
+
+    # График 2: Точность прогнозов
+    plt.subplot(2, 1, 2)
+    colors = ['green' if x <= 20 else 'orange' if x <= 50 else 'red' for x in df_analysis['Точность_MAPE_%']]
+    bars = plt.bar(range(len(df_analysis)), df_analysis['Точность_MAPE_%'], color=colors)
+    plt.title('Точность прогнозов (MAPE)', fontsize=16, fontweight='bold')
+    plt.xlabel('Категория')
+    plt.ylabel('Ошибка прогноза, %')
+    plt.xticks(range(len(df_analysis)), df_analysis['Категория'], rotation=45, ha='right')
+    plt.axhline(y=20, color='red', linestyle='--', alpha=0.7, label='Порог точности (20%)')
+
+    for bar, value in zip(bars, df_analysis['Точность_MAPE_%']):
+        plt.text(bar.get_x() + bar.get_width() / 2., bar.get_height() + 1,
+                 f'{value:.1f}%', ha='center', va='bottom', fontsize=10)
+
+    plt.legend()
+    plt.grid(axis='y', alpha=0.3)
+
+    plt.tight_layout()
+    plt.show()
+
+    # Вывод рекомендаций
+    print("\n💡 РЕКОМЕНДАЦИИ:")
+    best_category = df_analysis.iloc[0]['Категория']
+    worst_accuracy = df_analysis[df_analysis['Точность_MAPE_%'] == df_analysis['Точность_MAPE_%'].max()].iloc[0]
+
+    print(f"• Наибольший потенциал роста: {best_category}")
+    print(f"• Наименее точный прогноз: {worst_accuracy['Категория']} ({worst_accuracy['Точность_MAPE_%']:.1f}% ошибки)")
+
+    # Проверяем точность прогнозов
+    accurate_forecasts = df_analysis[df_analysis['Точность_MAPE_%'] <= 20]
+    if len(accurate_forecasts) > 0:
+        print(f"• Надежные прогнозы (MAPE ≤ 20%): {', '.join(accurate_forecasts['Категория'].tolist())}")
+
+    return df_analysis
+
+
+def evaluate_prophet_model(model, forecast, df_prophet):
+    """
+    Оценка качества модели Prophet на исторических данных.
+    Возвращает MAPE (Mean Absolute Percentage Error)
+    """
+    try:
+        # Соединяем фактические данные с прогнозом
+        df_eval = df_prophet.merge(forecast[['ds', 'yhat']], on='ds', how='inner')
+
+        # Вычисляем ошибки
+        df_eval['error'] = df_eval['y'] - df_eval['yhat']
+        df_eval['ape'] = (abs(df_eval['error']) / df_eval['y']) * 100
+
+        # Убираем бесконечные значения и деление на ноль
+        df_eval = df_eval[(df_eval['y'] > 0) & (df_eval['ape'] < float('inf'))]
+
+        if len(df_eval) > 0:
+            mape = df_eval['ape'].mean()
+            return mape
+        else:
+            return float('nan')
+
+    except Exception as e:
+        print(f"⚠️ Ошибка при оценке модели: {e}")
+        return float('nan')
