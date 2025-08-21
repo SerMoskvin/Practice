@@ -24,3 +24,22 @@ CLEANING_CONFIG = {
     # Столбцы, которые не должны содержать пустые значения
     "required_columns": ["Дата продажи", "Кол-во", "Сумма"]
 }
+
+# Конфигурация для модели Prophet
+PROPHET_CONFIG = {
+    "model_params": {
+        "seasonality_mode": "multiplicative",  # 'additive' or 'multiplicative'
+        "yearly_seasonality": True,
+        "weekly_seasonality": True,
+        "daily_seasonality": False,
+        "changepoint_prior_scale": 0.05,
+        "seasonality_prior_scale": 10.0,
+        "holidays_prior_scale": 10.0,
+    },
+    "forecast_params": {
+        "periods": 90,  # Прогноз на 90 дней вперед
+        "freq": 'D',     # Частота прогноза ('D' - день, 'W' - неделя, 'M' - месяц)
+    },
+    "country_holidays": "RU",  # Код страны для автоматического добавления праздников (Russia)
+    # Полный список: https://github.com/dr-prodigy/python-holidays
+}
