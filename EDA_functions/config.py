@@ -42,4 +42,12 @@ PROPHET_CONFIG = {
     },
     "country_holidays": "RU",  # Код страны для автоматического добавления праздников (Russia)
     # Полный список: https://github.com/dr-prodigy/python-holidays
+    "custom_holidays": [
+        # pd.DataFrame({
+        # 'holiday': 'promo_week', # название события
+        # 'ds': pd.to_datetime(['2023-02-01', '2023-08-01']), # Даты начала события
+        # 'lower_window': 0, # За сколько дней ДО события начинается эффект
+        # 'upper_window': 6, # Сколько дней ПОСЛЕ начала события длится эффект (то есть продолжительность)
+        # }),
+    ]
 }

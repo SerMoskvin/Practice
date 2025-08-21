@@ -1,6 +1,3 @@
-import pandas as pd
-
-
 def calculate_basic_stats(df):
     """Расчет базовой статистики"""
     stats = {}
