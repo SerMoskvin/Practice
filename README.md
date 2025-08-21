@@ -4,6 +4,7 @@
 ![Python Version](https://img.shields.io/badge/python-3.13.3-blue.svg)
 ![Version](https://img.shields.io/github/v/tag/SerMoskvin/Practice)
 
+[Ссылка на Google Colab](https://colab.research.google.com/drive/1vevlMuWOKPDtck6ygEd_tVM3l0zc7O-N?usp=sharing)
 ## Задачи, выполняемые проектом:
 - [x] Загрузка и очистка данных;
 - [x] Подсчёт выручки по месяцам;
