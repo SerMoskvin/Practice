@@ -5,3 +5,4 @@ seaborn
 prophet
 scikit-learn
 openpyxl
+plotly
